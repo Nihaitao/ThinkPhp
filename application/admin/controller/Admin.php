@@ -10,17 +10,62 @@ namespace app\admin\controller;
 
 use think\Config;
 use think\Log;
-use app\admin\model\UserInfo;
+use app\admin\model\User;
 
 class Admin extends BaseController {
 
     public function add() {
-        $user = new UserInfo();
-        $user->user_id = $this->guid();
-        $user->save($this->request->post());
+        $data = $this->request->post();
+        $User = new User();
+        $result = $User->allowField(['headimg', 'age', 'constellation', 'nickname', 'autograph'])->save($data, ['user_id' => $data["user_id"]]);
+        if (false === $result) {
+            return json(["result" => $result, "message" => $User->getError(), "data" => null]);
+        } else {
+            return json(["result" => $result > 0, "message" => "修改成功", "data" => null]);
+        }
+        
+        
+        
+//        $data = $this->request->post();
+//        $User = new User();
+//        $User->user_id = $this->guid();
+//        $result = $User->validate([
+//                    'user_name' => 'require|max:18',
+//                    'password' => 'require|min:6|max:32',
+//                        ], [
+//                    'user_name.require' => '名称不能为空',
+//                    'user_name.max' => '名称最多不能超过18个字符',
+//                    'password.require' => '密码不能低于6个字符',
+//                    'password.min' => '密码不能低于6个字符',
+//                    'password.max' => '密码不能超过32个字符',
+//                ])->save($data);
+//        if (false === $result) {
+//            // 验证失败 输出错误信息
+//            return json(["result" => $result, "message" => $User->getError(), "data" => null]);
+//        } else {
+//            return json(["result" => $result > 0, "message" => "操作成功", "data" => null]);
+//        }
     }
 
-    public function get(){        
+    public function get() {
+        $data = $this->request->get();
+        $result = $this->validate($data, [
+            'user_name' => 'require',
+            'password' => 'require',
+                ], [
+            'user_name.require' => '名称不能为空',
+            'password.require' => '密码不能为空',
+        ]);
+        if (true !== $result) {
+            return json(["result" => false, "message" => $result, "data" => null]);
+        } else {
+            $User = User::get($data);
+            if (is_null($User)) {
+                return json(["result" => false, "message" => "用户不存在", "data" => null]);
+            } else {
+                return json(["result" => true, "message" => "登陆成功", "data" => $User->toJson()]);
+            }
+        }
 //        // 查询单个数据
 //        $data = $user->where('user_name', 'nihaitao')
 //                ->find();        
@@ -83,10 +128,10 @@ class Admin extends BaseController {
     function guid() {
         mt_srand((double) microtime() * 10000);
         $charid = strtoupper(md5(uniqid(rand(), true)));
-        $uuid = substr($charid, 0, 8) 
+        $uuid = substr($charid, 0, 8)
                 . substr($charid, 8, 4)
-                . substr($charid, 12, 4) 
-                . substr($charid, 16, 4) 
+                . substr($charid, 12, 4)
+                . substr($charid, 16, 4)
                 . substr($charid, 20, 12);
         return $uuid;
     }
